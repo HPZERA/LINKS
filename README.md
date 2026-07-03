@@ -40,7 +40,7 @@ Se ainda não tiver um projeto: crie em [supabase.com](https://supabase.com/dash
 
 ### 3. Aplicar as migrations
 
-No **SQL Editor** do Supabase Studio, rode os arquivos de `supabase/migrations/` **em ordem** (0001 → 0008), ou use a CLI do Supabase:
+No **SQL Editor** do Supabase Studio, rode os arquivos de `supabase/migrations/` **em ordem** (0001 → 0009), ou use a CLI do Supabase. A migration `0009_grants.sql` é essencial: sem ela, o Postgres nega acesso a todas as tabelas mesmo para a service role key (RLS não substitui `GRANT` — se você criou o banco rodando as migrations manualmente pelo SQL Editor, os grants automáticos que o Table Editor aplicaria não acontecem sozinhos).
 
 ```bash
 supabase link --project-ref SEU_PROJECT_REF
