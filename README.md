@@ -1,36 +1,122 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Gerenciador Inteligente de Links
 
-## Getting Started
+Sistema de redirecionamento de links de afiliados (estilo Linktree, focado em performance) com painel administrativo. Acessar `SEU_DOMINIO/algum-slug` consulta o Supabase e redireciona via HTTP 302 em Edge Middleware — sem página intermediária.
 
-First, run the development server:
+## Stack
+
+Next.js 15 (App Router) · TypeScript · Tailwind CSS v4 · shadcn/ui · Supabase (Postgres + Auth) · Server Actions · Edge Middleware · Vercel
+
+## Arquitetura
+
+```
+src/
+├─ middleware.ts          # único middleware: rate limit -> auth guard (/admin) -> redirect de slug
+├─ lib/middleware/         # módulos compostos pelo middleware.ts
+├─ lib/supabase/           # clients: service (admin), server (SSR/cookies), browser, edge-public/edge-service (fetch cru)
+├─ repositories/           # acesso a dados (Supabase), usados pelas Server Actions/Server Components
+├─ services/               # regras de negócio + mapeamento para DTOs
+├─ actions/                 # Server Actions ('use server')
+├─ components/              # UI (shadcn/ui + componentes de domínio)
+└─ app/
+   ├─ page.tsx              # redireciona para /admin
+   ├─ not-found.tsx          # 404 customizado (slug inexistente)
+   ├─ login/                 # login (Supabase Auth)
+   └─ admin/                 # painel (protegido pelo middleware)
+```
+
+O redirecionamento nunca usa o SDK completo do Supabase (incompatível com o Edge Runtime) — usa `fetch` cru contra o PostgREST, tanto para resolver o slug (`lib/supabase/edge-public.ts`, anon key, via a view pública `links_public`) quanto para registrar o clique em segundo plano (`lib/supabase/edge-service.ts`, service role key, disparado via `context.waitUntil` **depois** do 302 já ter sido enviado — não atrasa o redirect).
+
+## Setup
+
+### 1. Instalar dependências
+
+```bash
+npm install
+```
+
+### 2. Criar o projeto no Supabase
+
+Se ainda não tiver um projeto: crie em [supabase.com](https://supabase.com/dashboard), de preferência na região **South America (São Paulo)** se o público for majoritariamente do Brasil (reduz a latência do redirect).
+
+### 3. Aplicar as migrations
+
+No **SQL Editor** do Supabase Studio, rode os arquivos de `supabase/migrations/` **em ordem** (0001 → 0008), ou use a CLI do Supabase:
+
+```bash
+supabase link --project-ref SEU_PROJECT_REF
+supabase db push
+```
+
+### 4. Criar o usuário administrador
+
+No dashboard do Supabase: **Authentication → Users → Add user**. Crie com seu e-mail e senha — esse é o único login aceito pelo painel (não há fluxo de cadastro). Um trigger (`0008_profiles.sql`) cria automaticamente a linha correspondente em `profiles`; se você criar o usuário antes de aplicar essa migration, o backfill dela cobre esse caso.
+
+### 5. Configurar variáveis de ambiente
+
+```bash
+cp .env.local.example .env.local
+```
+
+Preencha com os valores de **Project Settings → API** do Supabase:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY` (nunca exponha essa chave no client)
+
+### 6. Gerar os tipos reais do banco (opcional, recomendado)
+
+O projeto já vem com `src/types/database.types.ts` escrito manualmente espelhando as migrations. Depois de aplicar as migrations, você pode substituí-lo pelo tipo gerado automaticamente:
+
+```bash
+supabase gen types typescript --project-id SEU_PROJECT_REF > src/types/database.types.ts
+```
+
+### 7. Rodar localmente
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Acesse `http://localhost:3000/login`, entre com o usuário criado no passo 4, e crie seu primeiro link em **Links → Novo Link**.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Deploy na Vercel
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Importe o repositório na Vercel.
+2. Configure as mesmas variáveis de ambiente do `.env.local` (Settings → Environment Variables).
+3. Aponte seu domínio (`portalhpzera.com.br`) para o projeto na Vercel.
+4. Preencha o campo **Domínio principal** em **Configurações** no painel.
 
-## Learn More
+## Configurações opcionais
 
-To learn more about Next.js, take a look at the following resources:
+- **Meta Pixel / Conversions API**: preencha `Meta Pixel ID` e `Meta Access Token` (gerado em Events Manager → Configurações → Conversions API) na página de Configurações. O evento é disparado **server-side**, depois do redirect, sem afetar a velocidade do clique. Use `Meta Test Event Code` temporariamente para validar na aba Test Events.
+- **Google Analytics / GTM**: os IDs ficam salvos em Configurações para uso futuro (o redirect não carrega página, então esses scripts não são disparados client-side no clique — ficam disponíveis para integração futura, ex: no próprio painel admin).
+- **Webhook**: recebe um `POST` em JSON a cada clique (`{ event, slug, destinationUrl, country, device, referer, timestamp }`).
+- **Rate limiting distribuído**: opcional. Sem `UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN`, o sistema usa um fallback em memória por instância (não distribuído, proteção mínima). Para um limite consistente entre regiões, crie um banco gratuito em [upstash.com](https://upstash.com) e preencha essas variáveis. Se um link tiver tráfego alto vindo de IPs compartilhados (NAT corporativo/operadora), aumente `RATE_LIMIT_MAX`.
+- **Retenção de IP**: o toggle "Armazenar IP dos cliques" em Configurações controla se o IP bruto do visitante é gravado — desligue se sua política de privacidade não permitir.
+- **Redirecionamento padrão**: se preenchido em Configurações, um slug inexistente redireciona para essa URL em vez de mostrar o 404 customizado.
+- **E-mail de suporte**: campo informativo em Configurações, ainda sem uso automático no produto (reservado para uso futuro, ex: exibir em algum lugar do painel ou em notificações).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Perfis e permissões
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+A tabela `profiles` (1:1 com `auth.users`, populada automaticamente por trigger) guarda:
 
-## Deploy on Vercel
+- `role` (`admin` | `manager` | `user`): hoje é só armazenado — não há nenhuma rota/ação que restrinja por papel. Preparado para quando o painel tiver mais de um usuário com permissões diferentes.
+- `is_active`: **este campo é aplicado**. Se `false`, o middleware desloga o usuário e redireciona para `/login?reason=inactive` no próximo acesso a `/admin`. Para desativar alguém, edite a linha em `profiles` direto no Supabase (não há UI para isso ainda, já que só existe um admin hoje).
+- `last_login_at`: atualizado automaticamente por um trigger em `auth.users`, sem precisar de nenhum código na aplicação.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Exportação / backup
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Botões "Exportar" nas páginas de **Links** (`/admin/links/export`), **Cliques** (`/admin/clicks/export`, respeita os filtros de período/link aplicados) e **Configurações** (`/admin/settings/export`, JSON sem o `metaAccessToken`). Servem como backup manual — não há agendamento automático.
+
+## Colunas reservadas em `links`
+
+`password`, `expires_at`, `max_clicks`, `priority`, `rotation_weight`, `qr_code_url` e `archived_at` existem no schema (migration `0003`) mas **nenhuma delas tem lógica implementada ainda** — nem no formulário, nem no middleware de redirecionamento. Ficam preparadas para features futuras (link com senha, expiração, limite de cliques, rotação A/B, QR code, arquivamento). Se for implementar alguma, lembre que `password` deve guardar um hash, nunca texto puro.
+
+## Scripts
+
+```bash
+npm run dev     # desenvolvimento
+npm run build   # build de produção
+npm run start   # servir o build
+npm run lint    # ESLint
+```
