@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { Download, Plus } from "lucide-react";
 import { listLinks } from "@/services/link.service";
+import { getPublicDomain } from "@/services/settings.service";
 import { LinksTable } from "@/components/links/links-table";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
 export default async function LinksPage() {
-  const links = await listLinks();
+  const [links, publicDomain] = await Promise.all([listLinks(), getPublicDomain()]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -29,7 +30,7 @@ export default async function LinksPage() {
 
       <Card>
         <CardContent>
-          <LinksTable links={links} />
+          <LinksTable links={links} publicDomain={publicDomain} />
         </CardContent>
       </Card>
     </div>

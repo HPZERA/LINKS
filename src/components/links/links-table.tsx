@@ -3,8 +3,11 @@ import { Handshake, Pencil } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { CopyUrlButton } from "@/components/links/copy-url-button";
+import { OpenUrlButton } from "@/components/links/open-url-button";
 import { DeleteLinkDialog } from "@/components/links/delete-link-dialog";
 import { formatDateTime, formatNumber } from "@/utils/format";
+import { buildPublicUrl } from "@/utils/public-url";
 import type { LinkDTO } from "@/types/domain";
 
 function DestinationCell({ link }: { link: LinkDTO }) {
@@ -19,7 +22,7 @@ function DestinationCell({ link }: { link: LinkDTO }) {
   return <>{link.destinationUrl}</>;
 }
 
-export function LinksTable({ links }: { links: LinkDTO[] }) {
+export function LinksTable({ links, publicDomain }: { links: LinkDTO[]; publicDomain: string | null }) {
   if (links.length === 0) {
     return (
       <div className="rounded-lg border border-dashed border-border py-16 text-center text-muted-foreground">
@@ -33,6 +36,7 @@ export function LinksTable({ links }: { links: LinkDTO[] }) {
       <TableHeader>
         <TableRow>
           <TableHead>Slug</TableHead>
+          <TableHead>URL Pública</TableHead>
           <TableHead>Destino</TableHead>
           <TableHead>Categoria</TableHead>
           <TableHead className="text-right">Cliques</TableHead>
@@ -42,37 +46,51 @@ export function LinksTable({ links }: { links: LinkDTO[] }) {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {links.map((link) => (
-          <TableRow key={link.id}>
-            <TableCell className="font-medium">/{link.slug}</TableCell>
-            <TableCell className="max-w-72 truncate text-muted-foreground">
-              <DestinationCell link={link} />
-            </TableCell>
-            <TableCell className="text-muted-foreground">{link.categoryName ?? "—"}</TableCell>
-            <TableCell className="text-right">{formatNumber(link.clickCount)}</TableCell>
-            <TableCell className="text-muted-foreground">
-              {link.lastClickedAt ? formatDateTime(link.lastClickedAt) : "—"}
-            </TableCell>
-            <TableCell>
-              <Badge variant={link.status === "active" ? "success" : "secondary"}>
-                {link.status === "active" ? "Ativo" : "Inativo"}
-              </Badge>
-            </TableCell>
-            <TableCell>
-              <div className="flex items-center justify-end gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  nativeButton={false}
-                  render={<Link href={`/admin/links/${link.id}/edit`} />}
-                >
-                  <Pencil className="size-4" />
-                </Button>
-                <DeleteLinkDialog id={link.id} slug={link.slug} />
-              </div>
-            </TableCell>
-          </TableRow>
-        ))}
+        {links.map((link) => {
+          const publicUrl = publicDomain ? buildPublicUrl(publicDomain, link.slug) : null;
+          return (
+            <TableRow key={link.id}>
+              <TableCell className="font-medium">/{link.slug}</TableCell>
+              <TableCell className="max-w-64">
+                {publicUrl ? (
+                  <div className="flex items-center gap-1">
+                    <span className="truncate text-muted-foreground">{publicUrl}</span>
+                    <CopyUrlButton url={publicUrl} />
+                    <OpenUrlButton url={publicUrl} />
+                  </div>
+                ) : (
+                  <span className="text-muted-foreground">—</span>
+                )}
+              </TableCell>
+              <TableCell className="max-w-72 truncate text-muted-foreground">
+                <DestinationCell link={link} />
+              </TableCell>
+              <TableCell className="text-muted-foreground">{link.categoryName ?? "—"}</TableCell>
+              <TableCell className="text-right">{formatNumber(link.clickCount)}</TableCell>
+              <TableCell className="text-muted-foreground">
+                {link.lastClickedAt ? formatDateTime(link.lastClickedAt) : "—"}
+              </TableCell>
+              <TableCell>
+                <Badge variant={link.status === "active" ? "success" : "secondary"}>
+                  {link.status === "active" ? "Ativo" : "Inativo"}
+                </Badge>
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center justify-end gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    nativeButton={false}
+                    render={<Link href={`/admin/links/${link.id}/edit`} />}
+                  >
+                    <Pencil className="size-4" />
+                  </Button>
+                  <DeleteLinkDialog id={link.id} slug={link.slug} />
+                </div>
+              </TableCell>
+            </TableRow>
+          );
+        })}
       </TableBody>
     </Table>
   );

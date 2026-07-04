@@ -30,6 +30,17 @@ export async function getSettings(): Promise<SettingsDTO> {
   return toDTO(row);
 }
 
+/**
+ * Domínio usado para montar a URL pública de um link (ex: no card de
+ * sucesso ao criar). Prioriza o "Domínio principal" configurável em
+ * Configurações; cai para NEXT_PUBLIC_SITE_DOMAIN se ninguém tiver
+ * preenchido isso ainda. Nunca fica hardcoded no código.
+ */
+export async function getPublicDomain(): Promise<string | null> {
+  const settings = await getSettings();
+  return settings.primaryDomain || process.env.NEXT_PUBLIC_SITE_DOMAIN || null;
+}
+
 export async function updateSettings(input: SettingsFormInput): Promise<ActionResult<SettingsDTO>> {
   try {
     const row = await updateSettingsRow({

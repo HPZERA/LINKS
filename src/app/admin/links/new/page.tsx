@@ -1,13 +1,14 @@
 import { createLinkAction } from "@/actions/links.actions";
 import { listCategories } from "@/services/category.service";
 import { listActiveAffiliatePlatforms } from "@/services/affiliate-platform.service";
+import { getPublicDomain } from "@/services/settings.service";
 import { LinkForm } from "@/components/links/link-form";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function NewLinkPage() {
-  const [categories, affiliatePlatforms] = await Promise.all([
+  const [categories, affiliatePlatforms, publicDomain] = await Promise.all([
     listCategories(),
     listActiveAffiliatePlatforms(),
+    getPublicDomain(),
   ]);
 
   return (
@@ -19,18 +20,12 @@ export default async function NewLinkPage() {
         </p>
       </div>
 
-      <Card className="max-w-2xl">
-        <CardHeader>
-          <CardTitle>Detalhes do link</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <LinkForm
-            categories={categories}
-            affiliatePlatforms={affiliatePlatforms}
-            action={createLinkAction}
-          />
-        </CardContent>
-      </Card>
+      <LinkForm
+        categories={categories}
+        affiliatePlatforms={affiliatePlatforms}
+        publicDomain={publicDomain}
+        action={createLinkAction}
+      />
     </div>
   );
 }
