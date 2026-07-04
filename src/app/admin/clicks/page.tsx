@@ -56,7 +56,11 @@ export default async function ClicksPage({
           <h1 className="text-2xl font-semibold tracking-tight">Cliques</h1>
           <p className="text-muted-foreground">Histórico detalhado de cliques nos seus links.</p>
         </div>
-        <Button variant="outline" render={<Link href={`/admin/clicks/export?${exportQuery.toString()}`} />}>
+        <Button
+          variant="outline"
+          nativeButton={false}
+          render={<Link href={`/admin/clicks/export?${exportQuery.toString()}`} />}
+        >
           <Download className="size-4" />
           Exportar CSV
         </Button>
@@ -84,7 +88,12 @@ export default async function ClicksPage({
                 Anterior
               </Button>
             ) : (
-              <Button variant="outline" size="sm" render={<Link href={buildPageHref(page - 1)} />}>
+              <Button
+                variant="outline"
+                size="sm"
+                nativeButton={false}
+                render={<Link href={buildPageHref(page - 1)} />}
+              >
                 Anterior
               </Button>
             )}
@@ -93,7 +102,12 @@ export default async function ClicksPage({
                 Próxima
               </Button>
             ) : (
-              <Button variant="outline" size="sm" render={<Link href={buildPageHref(page + 1)} />}>
+              <Button
+                variant="outline"
+                size="sm"
+                nativeButton={false}
+                render={<Link href={buildPageHref(page + 1)} />}
+              >
                 Próxima
               </Button>
             )}

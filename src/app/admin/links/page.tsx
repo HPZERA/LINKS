@@ -16,11 +16,11 @@ export default async function LinksPage() {
           <p className="text-muted-foreground">Gerencie os redirecionamentos do seu domínio.</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" render={<Link href="/admin/links/export" />}>
+          <Button variant="outline" nativeButton={false} render={<Link href="/admin/links/export" />}>
             <Download className="size-4" />
             Exportar CSV
           </Button>
-          <Button render={<Link href="/admin/links/new" />}>
+          <Button nativeButton={false} render={<Link href="/admin/links/new" />}>
             <Plus className="size-4" />
             Novo Link
           </Button>

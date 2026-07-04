@@ -51,6 +51,7 @@ export function LinksTable({ links }: { links: LinkDTO[] }) {
                 <Button
                   variant="ghost"
                   size="icon"
+                  nativeButton={false}
                   render={<Link href={`/admin/links/${link.id}/edit`} />}
                 >
                   <Pencil className="size-4" />

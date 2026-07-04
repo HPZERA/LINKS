@@ -22,8 +22,14 @@ export function LinkFilter({ links, basePath }: { links: LinkDTO[]; basePath: st
     router.push(`${basePath}?${params.toString()}`);
   }
 
+  // Base UI Select.Value não escaneia os SelectItem para resolver o label —
+  // precisa do mapa value->label via `items` no Select.Root, senão mostra o
+  // value cru (ex: "all") em vez do texto legível.
+  const items: Record<string, React.ReactNode> = { [ALL_LINKS]: "Todos os links" };
+  for (const link of links) items[link.id] = `/${link.slug}`;
+
   return (
-    <Select value={currentLinkId} onValueChange={handleChange}>
+    <Select value={currentLinkId} onValueChange={handleChange} items={items}>
       <SelectTrigger className="w-56">
         <SelectValue placeholder="Todos os links" />
       </SelectTrigger>

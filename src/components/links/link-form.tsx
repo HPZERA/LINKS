@@ -24,6 +24,8 @@ import type { ActionResult, CategoryDTO, LinkDTO } from "@/types/domain";
 
 const NONE_CATEGORY = "none";
 
+const STATUS_ITEMS = { active: "Ativo", inactive: "Inativo" };
+
 export function LinkForm({
   categories,
   defaultValues,
@@ -34,6 +36,12 @@ export function LinkForm({
   action: (formData: FormData) => Promise<ActionResult<LinkDTO>>;
 }) {
   const router = useRouter();
+
+  // Base UI Select.Value não escaneia os SelectItem para resolver o label —
+  // precisa do mapa value->label via `items` no Select.Root, senão mostra o
+  // value cru (ex: "none") em vez do texto legível.
+  const categoryItems: Record<string, React.ReactNode> = { [NONE_CATEGORY]: "Nenhuma" };
+  for (const category of categories) categoryItems[category.id] = category.name;
 
   const form = useForm<LinkFormInput>({
     resolver: zodResolver(linkFormSchema),
@@ -120,6 +128,7 @@ export function LinkForm({
               <Select
                 value={field.value || NONE_CATEGORY}
                 onValueChange={(value) => field.onChange(value === NONE_CATEGORY ? "" : value)}
+                items={categoryItems}
               >
                 <FormControl>
                   <SelectTrigger className="w-full">
@@ -160,7 +169,7 @@ export function LinkForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Status</FormLabel>
-              <Select value={field.value} onValueChange={field.onChange}>
+              <Select value={field.value} onValueChange={field.onChange} items={STATUS_ITEMS}>
                 <FormControl>
                   <SelectTrigger className="w-full">
                     <SelectValue />

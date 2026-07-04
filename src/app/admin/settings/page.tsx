@@ -15,7 +15,7 @@ export default async function SettingsPage() {
           <h1 className="text-2xl font-semibold tracking-tight">Configurações</h1>
           <p className="text-muted-foreground">Domínio, branding e integrações do sistema.</p>
         </div>
-        <Button variant="outline" render={<Link href="/admin/settings/export" />}>
+        <Button variant="outline" nativeButton={false} render={<Link href="/admin/settings/export" />}>
           <Download className="size-4" />
           Exportar JSON
         </Button>
