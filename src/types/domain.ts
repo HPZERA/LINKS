@@ -1,15 +1,18 @@
-import type { LinkStatus, UserRole } from "./database.types";
+import type { DestinationType, LinkStatus, PlatformStatus, UserRole } from "./database.types";
 
 export type DeviceType = "desktop" | "mobile" | "tablet" | "unknown";
 
 export interface LinkDTO {
   id: string;
   slug: string;
-  destinationUrl: string;
+  destinationUrl: string | null;
   description: string | null;
   categoryId: string | null;
   categoryName: string | null;
   status: LinkStatus;
+  destinationType: DestinationType;
+  affiliatePlatformId: string | null;
+  affiliatePlatformName: string | null;
   clickCount: number;
   lastClickedAt: string | null;
   createdAt: string;
@@ -20,6 +23,17 @@ export interface CategoryDTO {
   id: string;
   name: string;
   slug: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AffiliatePlatformDTO {
+  id: string;
+  name: string;
+  slug: string;
+  affiliateUrl: string;
+  status: PlatformStatus;
+  notes: string | null;
   createdAt: string;
   updatedAt: string;
 }

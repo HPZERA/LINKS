@@ -1,11 +1,23 @@
 import Link from "next/link";
-import { Pencil } from "lucide-react";
+import { Handshake, Pencil } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DeleteLinkDialog } from "@/components/links/delete-link-dialog";
 import { formatDateTime, formatNumber } from "@/utils/format";
 import type { LinkDTO } from "@/types/domain";
+
+function DestinationCell({ link }: { link: LinkDTO }) {
+  if (link.destinationType === "affiliate_platform") {
+    return (
+      <span className="inline-flex items-center gap-1.5">
+        <Handshake className="size-3.5 shrink-0" />
+        {link.affiliatePlatformName ?? "Plataforma removida"}
+      </span>
+    );
+  }
+  return <>{link.destinationUrl}</>;
+}
 
 export function LinksTable({ links }: { links: LinkDTO[] }) {
   if (links.length === 0) {
@@ -34,7 +46,7 @@ export function LinksTable({ links }: { links: LinkDTO[] }) {
           <TableRow key={link.id}>
             <TableCell className="font-medium">/{link.slug}</TableCell>
             <TableCell className="max-w-72 truncate text-muted-foreground">
-              {link.destinationUrl}
+              <DestinationCell link={link} />
             </TableCell>
             <TableCell className="text-muted-foreground">{link.categoryName ?? "—"}</TableCell>
             <TableCell className="text-right">{formatNumber(link.clickCount)}</TableCell>

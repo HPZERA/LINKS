@@ -10,7 +10,13 @@ export async function GET() {
 
   const csv = toCsv<LinkDTO>(links, [
     { header: "Slug", value: (l) => l.slug },
-    { header: "Destino", value: (l) => l.destinationUrl },
+    {
+      header: "Destino",
+      value: (l) =>
+        l.destinationType === "affiliate_platform"
+          ? `Plataforma: ${l.affiliatePlatformName ?? "removida"}`
+          : l.destinationUrl,
+    },
     { header: "Categoria", value: (l) => l.categoryName ?? "" },
     { header: "Status", value: (l) => (l.status === "active" ? "Ativo" : "Inativo") },
     { header: "Cliques", value: (l) => l.clickCount },

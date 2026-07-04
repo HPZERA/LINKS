@@ -1,10 +1,14 @@
 import { createLinkAction } from "@/actions/links.actions";
 import { listCategories } from "@/services/category.service";
+import { listActiveAffiliatePlatforms } from "@/services/affiliate-platform.service";
 import { LinkForm } from "@/components/links/link-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function NewLinkPage() {
-  const categories = await listCategories();
+  const [categories, affiliatePlatforms] = await Promise.all([
+    listCategories(),
+    listActiveAffiliatePlatforms(),
+  ]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -20,7 +24,11 @@ export default async function NewLinkPage() {
           <CardTitle>Detalhes do link</CardTitle>
         </CardHeader>
         <CardContent>
-          <LinkForm categories={categories} action={createLinkAction} />
+          <LinkForm
+            categories={categories}
+            affiliatePlatforms={affiliatePlatforms}
+            action={createLinkAction}
+          />
         </CardContent>
       </Card>
     </div>

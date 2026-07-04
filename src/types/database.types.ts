@@ -1,5 +1,7 @@
 export type LinkStatus = "active" | "inactive";
 export type UserRole = "admin" | "manager" | "user";
+export type DestinationType = "manual" | "affiliate_platform";
+export type PlatformStatus = "active" | "inactive";
 
 export interface Database {
   public: {
@@ -28,11 +30,44 @@ export interface Database {
         };
         Relationships: [];
       };
+      affiliate_platforms: {
+        Row: {
+          id: string;
+          name: string;
+          slug: string;
+          affiliate_url: string;
+          status: PlatformStatus;
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          slug: string;
+          affiliate_url: string;
+          status?: PlatformStatus;
+          notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          slug?: string;
+          affiliate_url?: string;
+          status?: PlatformStatus;
+          notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       links: {
         Row: {
           id: string;
           slug: string;
-          destination_url: string;
+          destination_url: string | null;
           description: string | null;
           category_id: string | null;
           status: LinkStatus;
@@ -45,13 +80,15 @@ export interface Database {
           rotation_weight: number;
           qr_code_url: string | null;
           archived_at: string | null;
+          destination_type: DestinationType;
+          affiliate_platform_id: string | null;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id?: string;
           slug: string;
-          destination_url: string;
+          destination_url?: string | null;
           description?: string | null;
           category_id?: string | null;
           status?: LinkStatus;
@@ -64,13 +101,15 @@ export interface Database {
           rotation_weight?: number;
           qr_code_url?: string | null;
           archived_at?: string | null;
+          destination_type?: DestinationType;
+          affiliate_platform_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           id?: string;
           slug?: string;
-          destination_url?: string;
+          destination_url?: string | null;
           description?: string | null;
           category_id?: string | null;
           status?: LinkStatus;
@@ -83,6 +122,8 @@ export interface Database {
           rotation_weight?: number;
           qr_code_url?: string | null;
           archived_at?: string | null;
+          destination_type?: DestinationType;
+          affiliate_platform_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -92,6 +133,13 @@ export interface Database {
             columns: ["category_id"];
             isOneToOne: false;
             referencedRelation: "categories";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "links_affiliate_platform_id_fkey";
+            columns: ["affiliate_platform_id"];
+            isOneToOne: false;
+            referencedRelation: "affiliate_platforms";
             referencedColumns: ["id"];
           },
         ];

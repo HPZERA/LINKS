@@ -12,32 +12,40 @@ const slugSchema = z
     message: "Este slug é reservado pelo sistema.",
   });
 
-const destinationUrlSchema = z
-  .string()
-  .trim()
-  .min(1, "Informe a URL de destino.")
-  .superRefine((url, ctx) => {
-    const result = validateDestinationUrl(url);
-    if (!result.valid) {
+export const linkFormSchema = z
+  .object({
+    slug: slugSchema,
+    destinationType: z.enum(["manual", "affiliate_platform"]),
+    destinationUrl: z.string().trim().optional().or(z.literal("")),
+    affiliatePlatformId: z.string().uuid().optional().or(z.literal("")).or(z.null()),
+    description: z.string().trim().max(500).optional().or(z.literal("")),
+    categoryId: z.string().uuid().optional().or(z.literal("")).or(z.null()),
+    status: z.enum(["active", "inactive"]),
+  })
+  // destinationUrl/affiliatePlatformId só existem um por vez, dependendo de
+  // destinationType — por isso a validação condicional em vez de dois campos
+  // sempre obrigatórios.
+  .superRefine((data, ctx) => {
+    if (data.destinationType === "manual") {
+      if (!data.destinationUrl) {
+        ctx.addIssue({ code: "custom", path: ["destinationUrl"], message: "Informe a URL de destino." });
+        return;
+      }
+      const result = validateDestinationUrl(data.destinationUrl);
+      if (!result.valid) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["destinationUrl"],
+          message: result.reason ?? "URL de destino inválida.",
+        });
+      }
+    } else if (!data.affiliatePlatformId) {
       ctx.addIssue({
         code: "custom",
-        message: result.reason ?? "URL de destino inválida.",
+        path: ["affiliatePlatformId"],
+        message: "Selecione uma plataforma afiliada.",
       });
     }
   });
 
-export const linkFormSchema = z.object({
-  slug: slugSchema,
-  destinationUrl: destinationUrlSchema,
-  description: z.string().trim().max(500).optional().or(z.literal("")),
-  categoryId: z.string().uuid().optional().or(z.literal("")).or(z.null()),
-  status: z.enum(["active", "inactive"]),
-});
-
 export type LinkFormInput = z.infer<typeof linkFormSchema>;
-
-export const createLinkSchema = linkFormSchema;
-export const updateLinkSchema = linkFormSchema.extend({
-  id: z.string().uuid(),
-});
-export type UpdateLinkInput = z.infer<typeof updateLinkSchema>;

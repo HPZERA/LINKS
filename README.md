@@ -40,7 +40,7 @@ Se ainda não tiver um projeto: crie em [supabase.com](https://supabase.com/dash
 
 ### 3. Aplicar as migrations
 
-No **SQL Editor** do Supabase Studio, rode os arquivos de `supabase/migrations/` **em ordem** (0001 → 0009), ou use a CLI do Supabase. A migration `0009_grants.sql` é essencial: sem ela, o Postgres nega acesso a todas as tabelas mesmo para a service role key (RLS não substitui `GRANT` — se você criou o banco rodando as migrations manualmente pelo SQL Editor, os grants automáticos que o Table Editor aplicaria não acontecem sozinhos).
+No **SQL Editor** do Supabase Studio, rode os arquivos de `supabase/migrations/` **em ordem** (0001 → 0012), ou use a CLI do Supabase. A migration `0009_grants.sql` é essencial: sem ela, o Postgres nega acesso a todas as tabelas mesmo para a service role key (RLS não substitui `GRANT` — se você criou o banco rodando as migrations manualmente pelo SQL Editor, os grants automáticos que o Table Editor aplicaria não acontecem sozinhos).
 
 ```bash
 supabase link --project-ref SEU_PROJECT_REF
@@ -103,6 +103,19 @@ A tabela `profiles` (1:1 com `auth.users`, populada automaticamente por trigger)
 - `role` (`admin` | `manager` | `user`): hoje é só armazenado — não há nenhuma rota/ação que restrinja por papel. Preparado para quando o painel tiver mais de um usuário com permissões diferentes.
 - `is_active`: **este campo é aplicado**. Se `false`, o middleware desloga o usuário e redireciona para `/login?reason=inactive` no próximo acesso a `/admin`. Para desativar alguém, edite a linha em `profiles` direto no Supabase (não há UI para isso ainda, já que só existe um admin hoje).
 - `last_login_at`: atualizado automaticamente por um trigger em `auth.users`, sem precisar de nenhum código na aplicação.
+
+## Afiliados / Plataformas
+
+Cadastro central de plataformas de afiliado (**Afiliados** no menu, `/admin/affiliates`) para não colar o mesmo link de afiliado toda vez que criar um novo slug — cadastre a plataforma uma vez e reaproveite em quantos links quiser.
+
+- Tabela `affiliate_platforms` (migration `0010`): `name`, `slug`, `affiliate_url`, `status` (`active`/`inactive`), `notes`.
+- No formulário de link (**Novo Link** / editar), o campo **Tipo de destino** alterna entre:
+  - **URL manual**: comportamento de sempre, usa `links.destination_url`.
+  - **Plataforma afiliada**: seleciona uma plataforma ativa em vez de digitar a URL. O link guarda apenas `affiliate_platform_id`; a URL efetiva é sempre lida de `affiliate_platforms.affiliate_url` no momento do redirect — trocar a URL da plataforma atualiza instantaneamente todos os links que apontam para ela, sem precisar editar link por link.
+- A resolução do destino continua acontecendo **dentro da view `links_public`** (migration `0011`, um `left join` com `affiliate_platforms`), então o middleware de redirect continua fazendo uma única query — nenhum overhead extra no caminho quente do redirect.
+- Se a plataforma referenciada estiver **inativa**, a view não retorna a linha: o slug se comporta como se não tivesse match e cai no mesmo fallback configurado em Configurações (ou 404 customizado, se não houver fallback) — nunca redireciona para um destino inválido.
+- Uma plataforma com links apontando para ela **não pode ser excluída** (`on delete restrict` em `links.affiliate_platform_id`); a UI mostra o erro pedindo para reatribuir os links antes.
+- Links criados antes dessa feature continuam funcionando sem alteração: `destination_type` tem default `'manual'`, então todo link existente já nasce como "URL manual" com o comportamento de sempre.
 
 ## Exportação / backup
 

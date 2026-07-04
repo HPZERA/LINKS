@@ -1,5 +1,7 @@
 /** Código do Postgres para violação de constraint unique. */
 export const UNIQUE_VIOLATION = "23505";
+/** Código do Postgres para violação de foreign key (ex: on delete restrict). */
+export const FOREIGN_KEY_VIOLATION = "23503";
 
 export function isPostgresError(error: unknown, code: string): boolean {
   return (

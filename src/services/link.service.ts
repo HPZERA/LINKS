@@ -21,10 +21,26 @@ function toDTO(row: LinkWithCategory): LinkDTO {
     categoryId: row.category_id,
     categoryName: row.category_name,
     status: row.status,
+    destinationType: row.destination_type,
+    affiliatePlatformId: row.affiliate_platform_id,
+    affiliatePlatformName: row.affiliate_platform_name,
     clickCount: row.click_count,
     lastClickedAt: row.last_clicked_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+  };
+}
+
+function toInsertPayload(input: LinkFormInput) {
+  const isManual = input.destinationType === "manual";
+  return {
+    slug: input.slug,
+    destination_type: input.destinationType,
+    destination_url: isManual ? input.destinationUrl || null : null,
+    affiliate_platform_id: isManual ? null : input.affiliatePlatformId || null,
+    description: input.description || null,
+    category_id: input.categoryId || null,
+    status: input.status,
   };
 }
 
@@ -46,13 +62,7 @@ export async function isSlugTaken(slug: string, excludeId?: string): Promise<boo
 
 export async function createLink(input: LinkFormInput): Promise<ActionResult<LinkDTO>> {
   try {
-    const row = await createLinkRow({
-      slug: input.slug,
-      destination_url: input.destinationUrl,
-      description: input.description || null,
-      category_id: input.categoryId || null,
-      status: input.status,
-    });
+    const row = await createLinkRow(toInsertPayload(input));
     const full = await getLinkById(row.id);
     return { ok: true, data: full ? toDTO(full) : undefined };
   } catch (error) {
@@ -65,13 +75,7 @@ export async function createLink(input: LinkFormInput): Promise<ActionResult<Lin
 
 export async function updateLink(id: string, input: LinkFormInput): Promise<ActionResult<LinkDTO>> {
   try {
-    await updateLinkRow(id, {
-      slug: input.slug,
-      destination_url: input.destinationUrl,
-      description: input.description || null,
-      category_id: input.categoryId || null,
-      status: input.status,
-    });
+    await updateLinkRow(id, toInsertPayload(input));
     const full = await getLinkById(id);
     return { ok: true, data: full ? toDTO(full) : undefined };
   } catch (error) {

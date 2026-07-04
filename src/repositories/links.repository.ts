@@ -8,19 +8,26 @@ type LinkUpdate = Database["public"]["Tables"]["links"]["Update"];
 
 export interface LinkWithCategory extends LinkRow {
   category_name: string | null;
+  affiliate_platform_name: string | null;
 }
 
-const LIST_SELECT = "*, categories(name)";
+const LIST_SELECT = "*, categories(name), affiliate_platforms(name)";
+
+type NameJoin = { name: string } | { name: string }[] | null;
+
+function unwrapName(join: NameJoin): string | null {
+  return Array.isArray(join) ? join[0]?.name ?? null : join?.name ?? null;
+}
 
 function mapWithCategory(
-  row: LinkRow & { categories: { name: string } | { name: string }[] | null },
+  row: LinkRow & { categories: NameJoin; affiliate_platforms: NameJoin },
 ): LinkWithCategory {
-  const { categories, ...rest } = row;
-  const category_name = Array.isArray(categories)
-    ? categories[0]?.name ?? null
-    : categories?.name ?? null;
-
-  return { ...rest, category_name };
+  const { categories, affiliate_platforms, ...rest } = row;
+  return {
+    ...rest,
+    category_name: unwrapName(categories),
+    affiliate_platform_name: unwrapName(affiliate_platforms),
+  };
 }
 
 export async function listLinks(): Promise<LinkWithCategory[]> {

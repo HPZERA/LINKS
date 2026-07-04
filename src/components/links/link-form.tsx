@@ -20,18 +20,21 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { ActionResult, CategoryDTO, LinkDTO } from "@/types/domain";
+import type { ActionResult, AffiliatePlatformDTO, CategoryDTO, LinkDTO } from "@/types/domain";
 
 const NONE_CATEGORY = "none";
 
 const STATUS_ITEMS = { active: "Ativo", inactive: "Inativo" };
+const DESTINATION_TYPE_ITEMS = { manual: "URL manual", affiliate_platform: "Plataforma afiliada" };
 
 export function LinkForm({
   categories,
+  affiliatePlatforms,
   defaultValues,
   action,
 }: {
   categories: CategoryDTO[];
+  affiliatePlatforms: AffiliatePlatformDTO[];
   defaultValues?: Partial<LinkFormInput>;
   action: (formData: FormData) => Promise<ActionResult<LinkDTO>>;
 }) {
@@ -43,11 +46,16 @@ export function LinkForm({
   const categoryItems: Record<string, React.ReactNode> = { [NONE_CATEGORY]: "Nenhuma" };
   for (const category of categories) categoryItems[category.id] = category.name;
 
+  const platformItems: Record<string, React.ReactNode> = {};
+  for (const platform of affiliatePlatforms) platformItems[platform.id] = platform.name;
+
   const form = useForm<LinkFormInput>({
     resolver: zodResolver(linkFormSchema),
     defaultValues: {
       slug: "",
+      destinationType: "manual",
       destinationUrl: "",
+      affiliatePlatformId: "",
       description: "",
       categoryId: "",
       status: "active",
@@ -55,10 +63,17 @@ export function LinkForm({
     },
   });
 
+  const destinationType = form.watch("destinationType");
+
   async function onSubmit(values: LinkFormInput) {
     const formData = new FormData();
     formData.set("slug", values.slug);
-    formData.set("destinationUrl", values.destinationUrl);
+    formData.set("destinationType", values.destinationType);
+    formData.set("destinationUrl", values.destinationType === "manual" ? values.destinationUrl ?? "" : "");
+    formData.set(
+      "affiliatePlatformId",
+      values.destinationType === "affiliate_platform" ? values.affiliatePlatformId ?? "" : "",
+    );
     formData.set("description", values.description ?? "");
     formData.set("categoryId", values.categoryId === NONE_CATEGORY ? "" : (values.categoryId ?? ""));
     formData.set("status", values.status);
@@ -107,17 +122,79 @@ export function LinkForm({
 
         <FormField
           control={form.control}
-          name="destinationUrl"
+          name="destinationType"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>URL de destino</FormLabel>
-              <FormControl>
-                <Input placeholder="https://go.aff.start.bet.br/css2hjfd" {...field} />
-              </FormControl>
+              <FormLabel>Tipo de destino</FormLabel>
+              <Select
+                value={field.value}
+                onValueChange={(value) => {
+                  field.onChange(value);
+                  form.clearErrors(["destinationUrl", "affiliatePlatformId"]);
+                }}
+                items={DESTINATION_TYPE_ITEMS}
+              >
+                <FormControl>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="manual">URL manual</SelectItem>
+                  <SelectItem value="affiliate_platform">Plataforma afiliada</SelectItem>
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}
         />
+
+        {destinationType === "manual" ? (
+          <FormField
+            control={form.control}
+            name="destinationUrl"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>URL de destino</FormLabel>
+                <FormControl>
+                  <Input placeholder="https://go.aff.start.bet.br/css2hjfd" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        ) : (
+          <FormField
+            control={form.control}
+            name="affiliatePlatformId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Plataforma afiliada</FormLabel>
+                {affiliatePlatforms.length === 0 ? (
+                  <FormDescription>
+                    Nenhuma plataforma ativa cadastrada. Crie uma em Afiliados antes de usar esta opção.
+                  </FormDescription>
+                ) : (
+                  <Select value={field.value ?? ""} onValueChange={field.onChange} items={platformItems}>
+                    <FormControl>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Selecione uma plataforma" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {affiliatePlatforms.map((platform) => (
+                        <SelectItem key={platform.id} value={platform.id}>
+                          {platform.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         <FormField
           control={form.control}

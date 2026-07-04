@@ -10,14 +10,20 @@ function revalidateLinkPaths() {
   revalidatePath("/admin");
 }
 
-export async function createLinkAction(formData: FormData): Promise<ActionResult<LinkDTO>> {
-  const parsed = linkFormSchema.safeParse({
+function parseFormData(formData: FormData) {
+  return linkFormSchema.safeParse({
     slug: formData.get("slug"),
+    destinationType: formData.get("destinationType"),
     destinationUrl: formData.get("destinationUrl"),
+    affiliatePlatformId: formData.get("affiliatePlatformId"),
     description: formData.get("description"),
     categoryId: formData.get("categoryId"),
     status: formData.get("status"),
   });
+}
+
+export async function createLinkAction(formData: FormData): Promise<ActionResult<LinkDTO>> {
+  const parsed = parseFormData(formData);
 
   if (!parsed.success) {
     return { ok: false, error: "Dados inválidos.", fieldErrors: parsed.error.flatten().fieldErrors };
@@ -32,13 +38,7 @@ export async function updateLinkAction(
   id: string,
   formData: FormData,
 ): Promise<ActionResult<LinkDTO>> {
-  const parsed = linkFormSchema.safeParse({
-    slug: formData.get("slug"),
-    destinationUrl: formData.get("destinationUrl"),
-    description: formData.get("description"),
-    categoryId: formData.get("categoryId"),
-    status: formData.get("status"),
-  });
+  const parsed = parseFormData(formData);
 
   if (!parsed.success) {
     return { ok: false, error: "Dados inválidos.", fieldErrors: parsed.error.flatten().fieldErrors };

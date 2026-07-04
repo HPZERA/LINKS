@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   BarChart3,
   Folder,
+  Handshake,
   LayoutDashboard,
   Link as LinkIconLucide,
   MousePointerClick,
@@ -17,6 +18,7 @@ import { LogoutButton } from "@/components/layout/logout-button";
 const NAV_ITEMS = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/admin/links", label: "Links", icon: LinkIconLucide },
+  { href: "/admin/affiliates", label: "Afiliados", icon: Handshake },
   { href: "/admin/clicks", label: "Cliques", icon: MousePointerClick },
   { href: "/admin/stats", label: "Estatísticas", icon: BarChart3 },
   { href: "/admin/categories", label: "Categorias", icon: Folder },

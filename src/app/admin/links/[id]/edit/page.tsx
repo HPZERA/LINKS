@@ -2,12 +2,20 @@ import { notFound } from "next/navigation";
 import { updateLinkAction } from "@/actions/links.actions";
 import { getLink } from "@/services/link.service";
 import { listCategories } from "@/services/category.service";
+import { listAffiliatePlatforms } from "@/services/affiliate-platform.service";
 import { LinkForm } from "@/components/links/link-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function EditLinkPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [link, categories] = await Promise.all([getLink(id), listCategories()]);
+  const [link, categories, affiliatePlatforms] = await Promise.all([
+    getLink(id),
+    listCategories(),
+    // Lista completa (não só ativas): se o link já estiver apontando para uma
+    // plataforma que foi desativada depois, ela precisa continuar aparecendo
+    // no select para o admin ver/trocar — senão o campo fica em branco.
+    listAffiliatePlatforms(),
+  ]);
 
   if (!link) notFound();
 
@@ -27,10 +35,13 @@ export default async function EditLinkPage({ params }: { params: Promise<{ id: s
         <CardContent>
           <LinkForm
             categories={categories}
+            affiliatePlatforms={affiliatePlatforms}
             action={action}
             defaultValues={{
               slug: link.slug,
-              destinationUrl: link.destinationUrl,
+              destinationType: link.destinationType,
+              destinationUrl: link.destinationUrl ?? "",
+              affiliatePlatformId: link.affiliatePlatformId ?? "",
               description: link.description ?? "",
               categoryId: link.categoryId ?? "",
               status: link.status,
