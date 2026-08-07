@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { linkFormSchema, type LinkFormInput } from "@/lib/validations/link.schema";
-import { slugify } from "@/utils/slugify";
+import { sanitizeSlugInput, slugify } from "@/utils/slugify";
 import { buildPublicUrl } from "@/utils/public-url";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -145,7 +145,11 @@ export function LinkForm({
                       <Input
                         placeholder="deposito"
                         {...field}
-                        onChange={(event) => field.onChange(slugify(event.target.value))}
+                        onChange={(event) => field.onChange(sanitizeSlugInput(event.target.value))}
+                        onBlur={(event) => {
+                          field.onChange(slugify(event.target.value));
+                          field.onBlur();
+                        }}
                       />
                     </div>
                   </FormControl>

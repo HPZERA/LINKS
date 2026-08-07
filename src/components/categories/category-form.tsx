@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { categoryFormSchema, type CategoryFormInput } from "@/lib/validations/category.schema";
-import { slugify } from "@/utils/slugify";
+import { sanitizeSlugInput, slugify } from "@/utils/slugify";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -81,7 +81,11 @@ export function CategoryForm({
                 <Input
                   placeholder="depositos"
                   {...field}
-                  onChange={(event) => field.onChange(slugify(event.target.value))}
+                  onChange={(event) => field.onChange(sanitizeSlugInput(event.target.value))}
+                  onBlur={(event) => {
+                    field.onChange(slugify(event.target.value));
+                    field.onBlur();
+                  }}
                 />
               </FormControl>
               <FormMessage />
