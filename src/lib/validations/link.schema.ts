@@ -7,7 +7,10 @@ const slugSchema = z
   .trim()
   .min(1, "Informe o slug.")
   .max(SLUG_MAX_LENGTH, `O slug deve ter no máximo ${SLUG_MAX_LENGTH} caracteres.`)
-  .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "Use apenas letras minúsculas, números e hífens (ex: deposito).")
+  .regex(
+    /^[a-z0-9]+([-.;][a-z0-9]+)*$/,
+    "Use apenas letras minúsculas, números, hífen, ponto ou ponto-e-vírgula (ex: deposito, v2.roleta).",
+  )
   .refine((slug) => !RESERVED_SLUGS.has(slug), {
     message: "Este slug é reservado pelo sistema.",
   });

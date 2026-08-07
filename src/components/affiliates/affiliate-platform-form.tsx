@@ -8,7 +8,7 @@ import {
   affiliatePlatformFormSchema,
   type AffiliatePlatformFormInput,
 } from "@/lib/validations/affiliate-platform.schema";
-import { slugify } from "@/utils/slugify";
+import { sanitizeSlugInput, slugify } from "@/utils/slugify";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -98,7 +98,11 @@ export function AffiliatePlatformForm({
                 <Input
                   placeholder="bet365"
                   {...field}
-                  onChange={(event) => field.onChange(slugify(event.target.value))}
+                  onChange={(event) => field.onChange(sanitizeSlugInput(event.target.value))}
+                  onBlur={(event) => {
+                    field.onChange(slugify(event.target.value));
+                    field.onBlur();
+                  }}
                 />
               </FormControl>
               <FormMessage />

@@ -22,7 +22,10 @@ export const affiliatePlatformFormSchema = z.object({
     .trim()
     .min(1, "Informe o slug.")
     .max(80)
-    .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "Use apenas letras minúsculas, números e hífens."),
+    .regex(
+      /^[a-z0-9]+([-.;][a-z0-9]+)*$/,
+      "Use apenas letras minúsculas, números, hífen, ponto ou ponto-e-vírgula.",
+    ),
   affiliateUrl: affiliateUrlSchema,
   status: z.enum(["active", "inactive"]),
   notes: z.string().trim().max(500).optional().or(z.literal("")),
